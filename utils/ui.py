@@ -19,6 +19,14 @@ class H2(QLabel):
     self.setFont(font_style)
 
 
+class H3(QLabel):
+  def __init__(self, text):
+    super().__init__(text)
+    font_style = QFont(
+      'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"', 12)
+    self.setFont(font_style)
+
+
 class SubText(QLabel):
   def __init__(self, text):
     super().__init__(text)

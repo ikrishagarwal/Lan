@@ -2,10 +2,13 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox
 from utils.adapter import AdapterLoader
 from utils.ui import Hr
 from components.Header import Header
+from components.SavedConfigs import SideBar
 import globals
 
 
 class MainWindow(QWidget):
+  active_adapter: str | None = None
+
   def __init__(self):
     super().__init__()
 
@@ -34,8 +37,23 @@ class MainWindow(QWidget):
     row.addWidget(refresh)
     v.addLayout(row)
 
-    self.setLayout(v)
+    body_layout = QHBoxLayout()
+    self.sidebar = SideBar()
 
+    self.sidebar.populate({
+      "config1": "Home Network",
+      "config2": "Office Network",
+      "config3": "Mobile HotSpot"
+    })
+
+    self.sidebar.selection.connect(lambda id: print(f"Selected config: {id}"))
+
+    body_layout.addWidget(self.sidebar, 0)
+    body_layout.addWidget(QWidget(), 1)  # Placeholder for main content
+
+    v.addLayout(body_layout, 1)
+
+    self.setLayout(v)
     self.refresh_adapter_menu()
     self.adapter_combo.currentIndexChanged.connect(self.current_adapter)
 
@@ -59,9 +77,4 @@ class MainWindow(QWidget):
 
   def current_adapter(self):
     cur = self.adapter_combo.currentText()
-
-    print(f"Current adapter: {cur}")
-
-    if cur == "No adapters found":
-      return None
-    return cur
+    self.active_adapter = None if cur == "No adapters found" else cur
