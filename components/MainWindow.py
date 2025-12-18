@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton
 from utils.adapter import AdapterLoader
-from utils.ui import Hr
+from utils.ui import Hr, VerticalBar
 from components.Header import Header
 from components.SavedConfigs import SideBar
 import globals
@@ -48,8 +48,10 @@ class MainWindow(QWidget):
 
     self.sidebar.selection.connect(lambda id: print(f"Selected config: {id}"))
 
-    body_layout.addWidget(self.sidebar, 0)
-    body_layout.addWidget(QWidget(), 1)  # Placeholder for main content
+    body_layout.addWidget(self.sidebar)
+    body_layout.addWidget(VerticalBar())
+    # Placeholder for main content
+    body_layout.addWidget(QLabel("Main Content"), 1)
 
     v.addLayout(body_layout, 1)
 

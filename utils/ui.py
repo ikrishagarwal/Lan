@@ -45,3 +45,11 @@ class Hr(QFrame):
     super().__init__()
     self.setFrameShape(QFrame.Shape.HLine)
     self.setFrameShadow(QFrame.Shadow.Sunken)
+
+
+class VerticalBar(QFrame):
+  def __init__(self):
+    super().__init__()
+    self.setFrameShape(QFrame.Shape.VLine)
+    self.setFrameShadow(QFrame.Shadow.Sunken)
+    self.setLineWidth(1)
