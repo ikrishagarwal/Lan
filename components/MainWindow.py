@@ -3,6 +3,7 @@ from utils.adapter import AdapterLoader
 from utils.ui import Hr, VerticalBar
 from components.Header import Header
 from components.SavedConfigs import SideBar
+from components.Main import Main
 import globals
 
 
@@ -51,7 +52,7 @@ class MainWindow(QWidget):
     body_layout.addWidget(self.sidebar)
     body_layout.addWidget(VerticalBar())
     # Placeholder for main content
-    body_layout.addWidget(QLabel("Main Content"), 1)
+    body_layout.addWidget(Main(), 1)
 
     v.addLayout(body_layout, 1)
 
