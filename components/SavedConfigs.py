@@ -15,20 +15,22 @@ class SideBar(QWidget):
     heading.setAlignment(Qt.AlignmentFlag.AlignCenter)
     heading.setStyleSheet("""
       QLabel {
-        background: #33333344;
         margin-bottom: 0px;
         margin-top: 15px;
         font-weight: bold;
         border-radius: 2px;
       }
     """)
-    layout.addWidget(heading)
+    layout.addWidget(heading, 0)
 
     self._layout = QVBoxLayout()
     self._layout.setContentsMargins(10, 10, 10, 10)
     # self._layout.setContentsMargins(0, 0, 0, 0)
 
-    layout.addLayout(self._layout)
+    list_widget = QWidget()
+    list_widget.setLayout(self._layout)
+    # layout.addLayout(self._layout, 1)
+    layout.addWidget(list_widget, 1)
     self.setLayout(layout)
 
     self.clear()
@@ -58,7 +60,9 @@ class SideBar(QWidget):
         lambda _, btn_id=id: self.selection.emit(btn_id))
       button.setFlat(True)
 
-      self._layout.addWidget(button)
+      self._layout.addWidget(button, 0)
+
+    self._layout.addStretch(1)
 
   def clear(self):
     while self._layout.count():
@@ -74,3 +78,7 @@ class SideBar(QWidget):
     )
     text.setPalette(palette)
     self._layout.addWidget(text)
+
+  def reset(self):
+    self.clear()
+    self.set_empty_message()
