@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QFormLayout, QLineEdit, QHBoxLayout, QPushButton
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QFormLayout, QLineEdit, QHBoxLayout, QPushButton, QSizePolicy
 from utils.ui import H2
 
 
@@ -42,6 +42,6 @@ class Main(QWidget):
     button_widget.setLayout(button_layout)
     form_layout.addWidget(button_widget)
 
-    layout.addLayout(form_layout)
+    layout.addLayout(form_layout, 1)
 
     self.setLayout(layout)

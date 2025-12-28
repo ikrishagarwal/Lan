@@ -1,6 +1,6 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QSizePolicy
 from utils.adapter import AdapterLoader
-from utils.ui import Hr, VerticalBar
+from utils.ui import VerticalBar
 from components.Header import Header
 from components.SavedConfigs import SideBar
 from components.Main import Main
@@ -24,10 +24,10 @@ class MainWindow(QWidget):
     self.is_loading = False
 
     v = QVBoxLayout()
+    self._layout = v
     v.setContentsMargins(10, 10, 10, 10)
 
-    v.addLayout(Header())
-    v.addWidget(Hr())
+    v.addWidget(Header(), 0)
 
     row = QHBoxLayout()
     row.addWidget(QLabel("Adapter:"))
@@ -43,7 +43,7 @@ class MainWindow(QWidget):
     v.addLayout(row)
 
     self.loader_widget = Loader()
-    v.addWidget(self.loader_widget)
+    v.addWidget(self.loader_widget, 1)
 
     self.is_loading = True
 
@@ -63,11 +63,19 @@ class MainWindow(QWidget):
     body_layout.addWidget(VerticalBar())
     body_layout.addWidget(Main(), 1)
 
-    self.body_layout = body_layout
-    # v.addLayout(body_layout, 1)
+    self.body_widget = QWidget()
+    self.body_widget.setLayout(body_layout)
+    self.body_widget.setVisible(False)
+
+    v.addWidget(self.body_widget, 1)
+
+    v.addStretch(0)
+    self.setSizePolicy(QSizePolicy.Policy.Preferred,
+                       QSizePolicy.Policy.Preferred)
 
     self.setLayout(v)
-    self._layout = v
+    # v.addLayout(body_layout, 1)
+
     self.refresh_adapter_menu()
     self.adapter_combo.currentIndexChanged.connect(self.current_adapter)
 
@@ -79,8 +87,14 @@ class MainWindow(QWidget):
 
     if not self.is_loading:
       self.is_loading = True
-      self._layout.removeItem(self.body_layout)
-      self._layout.addWidget(self.loader_widget, 1)
+      # self._layout.setEnabled(False)
+      # self._layout.removeWidget(self.body_widget)
+      # self.body_widget.setParent(None)
+      # self._layout.addWidget(self.loader_widget, 1)
+      # self._layout.setEnabled(True)
+
+      self.loader_widget.setVisible(True)
+      self.body_widget.setVisible(False)
 
     self.network_adapter.refresh()
 
@@ -91,19 +105,29 @@ class MainWindow(QWidget):
     if not adapters:
       self.adapter_combo.addItem("No adapters found")
     else:
-      self.adapter_combo.addItems(
-        adapter for adapter in adapters if "ethernet" in adapter.lower())
+      # self.adapter_combo.addItems(
+        # adapter for adapter in adapters if "ethernet" in adapter.lower())
+      self.adapter_combo.addItems(adapters)
       self.adapter_combo.setEnabled(True)
 
   def current_adapter(self):
     cur = self.adapter_combo.currentText()
     self.active_adapter = None if cur == "No adapters found" else cur
 
+    print(f"Current adapter: {self.active_adapter}")
+
     # TODO: if cur is None then show error
 
     if self.is_loading:
       self.is_loading = False
-      self._layout.removeWidget(self.loader_widget)
-      self.loader_widget.setParent(None)
-      self._layout.addLayout(self.body_layout, 1)
+
+      # self._layout.setEnabled(False)
+      # self._layout.removeWidget(self.loader_widget)
+      # self.loader_widget.setParent(None)
+      # self._layout.addWidget(self.body_widget, 1)
+      # self.sidebar.reset()
+      # self._layout.setEnabled(True)
+
+      self.loader_widget.setVisible(False)
+      self.body_widget.setVisible(True)
       self.sidebar.reset()

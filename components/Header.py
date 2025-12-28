@@ -1,15 +1,19 @@
-from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout
+from PyQt6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QSizePolicy
 from PyQt6.QtSvgWidgets import QSvgWidget
 from PyQt6.QtCore import Qt
 import globals
-from utils.ui import H2, SubText
+from utils.ui import H2, Hr, SubText
 
 
-class Header(QHBoxLayout):
+class Header(QWidget):
   def __init__(self):
     super().__init__()
-    self.setContentsMargins(0, 0, 0, 0)
-    self.setSpacing(10)
+
+    self._h_layout = QHBoxLayout()
+    self._layout = QVBoxLayout()
+
+    self._h_layout.setContentsMargins(0, 0, 0, 0)
+    self._h_layout.setSpacing(10)
 
     header = QVBoxLayout()
     header.setContentsMargins(0, 0, 10, 0)
@@ -23,6 +27,15 @@ class Header(QHBoxLayout):
 
     server_icon = QSvgWidget("assets/server.svg")
     server_icon.setFixedSize(24, 24)
+    # server_icon.setSizePolicy(
+    # QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
-    self.addWidget(server_icon, 0, Qt.AlignmentFlag.AlignVCenter)
-    self.addLayout(header, 1)
+    self._h_layout.addWidget(server_icon, 0, Qt.AlignmentFlag.AlignVCenter)
+    self._h_layout.addLayout(header, 1)
+
+    self._layout.addLayout(self._h_layout)
+    self._layout.addWidget(Hr())
+    self.setLayout(self._layout)
+
+    self.setSizePolicy(QSizePolicy.Policy.Preferred,
+                       QSizePolicy.Policy.Fixed)
