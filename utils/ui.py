@@ -30,6 +30,15 @@ class H3(QLabel):
     self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
 
+class H4(QLabel):
+  def __init__(self, text):
+    super().__init__(text)
+    font_style = QFont(
+      'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"', 10)
+    self.setFont(font_style)
+    self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+
+
 class SubText(QLabel):
   def __init__(self, text):
     super().__init__(text)

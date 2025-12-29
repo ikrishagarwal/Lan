@@ -1,6 +1,8 @@
-from PyQt6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QSizePolicy
+from PyQt6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QSizePolicy, QPushButton
 from PyQt6.QtSvgWidgets import QSvgWidget
+from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import Qt
+from components.Settings import Settings
 import globals
 from utils.ui import H2, Hr, SubText
 
@@ -27,11 +29,20 @@ class Header(QWidget):
 
     server_icon = QSvgWidget("assets/server.svg")
     server_icon.setFixedSize(24, 24)
-    # server_icon.setSizePolicy(
-    # QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
     self._h_layout.addWidget(server_icon, 0, Qt.AlignmentFlag.AlignVCenter)
     self._h_layout.addLayout(header, 1)
+
+    settings_button = QPushButton()
+    settings_button.setFlat(True)
+
+    settings_icon = QIcon("assets/settings.svg")
+    settings_button.setIcon(settings_icon)
+
+    settings_button.setStyleSheet("padding: 6px 4px;")
+    settings_button.clicked.connect(self.settings_handler)
+
+    self._h_layout.addWidget(settings_button, 0, Qt.AlignmentFlag.AlignVCenter)
 
     self._layout.addLayout(self._h_layout)
     self._layout.addWidget(Hr())
@@ -39,3 +50,7 @@ class Header(QWidget):
 
     self.setSizePolicy(QSizePolicy.Policy.Preferred,
                        QSizePolicy.Policy.Fixed)
+
+  def settings_handler(self):
+    settings_dialog = Settings()
+    settings_dialog.exec()
