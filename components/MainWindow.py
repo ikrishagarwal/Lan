@@ -1,5 +1,6 @@
 from logging import config
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QSizePolicy
+from components.NoAdapter import NoAdapter
 from utils.config_manager import ConfigManager
 from utils.adapter import AdapterLoader
 from utils.ui import VerticalBar
@@ -25,8 +26,8 @@ class MainWindow(QWidget):
     # TODO: change it to use ~/.config/lan_config.json
     self.config = ConfigManager(filename="config/settings.json")
 
-    # states
-    self.is_loading = False
+    # we start with a loading state
+    self.is_loading = True
 
     v = QVBoxLayout()
     self._layout = v
@@ -35,7 +36,6 @@ class MainWindow(QWidget):
     v.addWidget(Header(), 0)
 
     row = QHBoxLayout()
-    row.addWidget(QLabel("Adapter:"))
 
     self.adapter_combo = QComboBox()
 
@@ -50,12 +50,15 @@ class MainWindow(QWidget):
     self.loader_widget = Loader()
     v.addWidget(self.loader_widget, 1)
 
-    self.is_loading = True
+    self.no_adapter_widget = NoAdapter()
+    self.no_adapter_widget.setVisible(False)
+    self._layout.addWidget(self.no_adapter_widget, 1)
 
     body_layout = QHBoxLayout()
     self.sidebar = SideBar()
 
     self.sidebar.selection.connect(self.saved_config_select_handler)
+    self.sidebar.delete.connect(self.delete_saved_config_handler)
 
     body_layout.addWidget(self.sidebar)
     body_layout.addWidget(VerticalBar())
@@ -82,12 +85,13 @@ class MainWindow(QWidget):
 
   def refresh_adapter_menu(self):
     self.adapter_combo.clear()
-    self.adapter_combo.addItem("Loading adapters...")
+    self.adapter_combo.addItem("Fetching adapters...")
     self.adapter_combo.setEnabled(False)
     self.adapter_combo.blockSignals(True)
 
     if not self.is_loading:
       self.is_loading = True
+      self.no_adapter_widget.setVisible(False)
       self.loader_widget.setVisible(True)
       self.body_widget.setVisible(False)
       self.sidebar.reset()
@@ -103,24 +107,28 @@ class MainWindow(QWidget):
     else:
       self.adapter_combo.addItems(
         adapter for adapter in adapters if "ethernet" in adapter.lower())
+      # self.adapter_combo.addItems(adapters)
       self.adapter_combo.setEnabled(True)
 
   def current_adapter(self):
     cur = self.adapter_combo.currentText()
     self.active_adapter = None if cur == "No adapters found" else cur
 
-    # TODO: if cur is None then show error
-    # For now, it's gonna be just stuck in loading screen if it can't find any adapters
     if not self.active_adapter:
+      self.loader_widget.setVisible(False)
+      self.body_widget.setVisible(False)
+
+      self.no_adapter_widget.setVisible(True)
       return
 
     if self.is_loading:
       self.is_loading = False
 
+      self.no_adapter_widget.setVisible(False)
       self.loader_widget.setVisible(False)
       self.body_widget.setVisible(True)
 
-      self.populate_saved_configs()
+    self.populate_saved_configs()
 
   def populate_saved_configs(self):
     if not self.active_adapter:
@@ -157,6 +165,27 @@ class MainWindow(QWidget):
       return
 
     self.main_body_widget.populate(config_name, config_data)
+
+  def delete_saved_config_handler(self, config_name: str):
+    if not self.active_adapter:
+      print("No active adapter selected. Cannot delete configuration.")
+      return
+
+    if not config_name:
+      print("No configuration name provided.")
+      return
+
+    adapter_saved_configs = self.config.get(self.active_adapter) or {}
+
+    if config_name not in adapter_saved_configs:
+      print(
+        f"Configuration '{config_name}' not found for adapter '{self.active_adapter}'.")
+      return
+
+    adapter_saved_configs.pop(config_name)
+    self.config.set(self.active_adapter, adapter_saved_configs)
+
+    self.populate_saved_configs()
 
   def save_handler(self, config_data: dict):
     if not self.active_adapter:

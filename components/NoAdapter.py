@@ -3,18 +3,16 @@ from PyQt6.QtCore import Qt
 from utils.ui import SubText
 
 
-class Loader(QWidget):
+class NoAdapter(QWidget):
   def __init__(self, parent=None):
     super().__init__(parent)
-
-    self.setMinimumHeight(100)
-
     self._layout = QVBoxLayout()
-    self.setLayout(self._layout)
 
-    loading_label = SubText("Fetching the available Network Adapters...")
+    loading_label = SubText("Can't detect any Ethernet Adapters")
     loading_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     self._layout.addStretch()
     self._layout.addWidget(loading_label)
     self._layout.addStretch()
+
+    self.setLayout(self._layout)
