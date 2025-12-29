@@ -22,6 +22,8 @@ class Main(QWidget):
     layout.addWidget(label)
 
     form_layout = QFormLayout()
+    form_layout.setVerticalSpacing(10)
+
     self.name = QLineEdit()
     self.ip = QLineEdit()
     self.subnet = QLineEdit()
@@ -52,6 +54,14 @@ class Main(QWidget):
     layout.addLayout(form_layout, 1)
 
     self.setLayout(layout)
+
+  def populate(self, config_name: str, config_data: dict):
+    self.name.setText(config_name)
+    self.ip.setText(config_data.get("ip", ""))
+    self.subnet.setText(config_data.get("subnet", ""))
+    self.gateway.setText(config_data.get("gateway", ""))
+    self.dns_primary.setText(config_data.get("dns_primary", ""))
+    self.dns_secondary.setText(config_data.get("dns_secondary", ""))
 
   def _save_handler(self):
     config_data = {

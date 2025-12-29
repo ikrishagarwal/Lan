@@ -51,6 +51,7 @@ class SideBar(QWidget):
           border: 0;
           padding: 5px;
           border-radius: 4px;
+          outline: none;
         }
         QPushButton:hover {
           background-color: #333;

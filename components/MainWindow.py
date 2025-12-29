@@ -1,3 +1,4 @@
+from logging import config
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QSizePolicy
 from utils.config_manager import ConfigManager
 from utils.adapter import AdapterLoader
@@ -54,16 +55,15 @@ class MainWindow(QWidget):
     body_layout = QHBoxLayout()
     self.sidebar = SideBar()
 
-    # TODO: populate saved configs on selection change
-    self.sidebar.selection.connect(lambda id: print(f"Selected config: {id}"))
+    self.sidebar.selection.connect(self.saved_config_select_handler)
 
     body_layout.addWidget(self.sidebar)
     body_layout.addWidget(VerticalBar())
 
-    main_body_widget = Main()
-    main_body_widget.save.connect(self.save_handler)
+    self.main_body_widget = Main()
+    self.main_body_widget.save.connect(self.save_handler)
 
-    body_layout.addWidget(main_body_widget, 1)
+    body_layout.addWidget(self.main_body_widget, 1)
 
     self.body_widget = QWidget()
     self.body_widget.setLayout(body_layout)
@@ -109,8 +109,6 @@ class MainWindow(QWidget):
     cur = self.adapter_combo.currentText()
     self.active_adapter = None if cur == "No adapters found" else cur
 
-    print(f"Current adapter: {self.active_adapter}")
-
     # TODO: if cur is None then show error
     # For now, it's gonna be just stuck in loading screen if it can't find any adapters
     if not self.active_adapter:
@@ -141,6 +139,25 @@ class MainWindow(QWidget):
     if saved_config_data:
       self.sidebar.populate(saved_config_data)
 
+  def saved_config_select_handler(self, config_name: str):
+    if not self.active_adapter:
+      print("No active adapter selected. Cannot select configuration.")
+      return
+
+    if not config_name:
+      print("No configuration name provided.")
+      return
+
+    adapter_saved_configs = self.config.get(self.active_adapter) or {}
+    config_data = adapter_saved_configs.get(config_name)
+
+    if not config_data:
+      print(
+        f"Configuration '{config_name}' not found for adapter '{self.active_adapter}'.")
+      return
+
+    self.main_body_widget.populate(config_name, config_data)
+
   def save_handler(self, config_data: dict):
     if not self.active_adapter:
       print("No active adapter selected. Cannot save configuration.")
@@ -148,10 +165,9 @@ class MainWindow(QWidget):
 
     saved_data = self.config.get(self.active_adapter) or {}
 
-    data_to_save = config_data.copy()
-    data_to_save.pop("name")
-
-    saved_data[config_data["name"]] = data_to_save
+    config_to_save = config_data.copy()
+    config_to_save.pop("name")
+    saved_data[config_data["name"]] = config_to_save
 
     self.config.set(self.active_adapter, saved_data)
     self.populate_saved_configs()
