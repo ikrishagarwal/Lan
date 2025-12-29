@@ -1,4 +1,5 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QSizePolicy
+from utils.config_manager import ConfigManager
 from utils.adapter import AdapterLoader
 from utils.ui import VerticalBar
 from components.Header import Header
@@ -19,6 +20,9 @@ class MainWindow(QWidget):
 
     self.network_adapter = AdapterLoader()
     self.network_adapter.finished.connect(self.refresh_adapters)
+
+    # TODO: change it to use ~/.config/lan_config.json
+    self.config = ConfigManager(filename="config/settings.json")
 
     # states
     self.is_loading = False
@@ -50,18 +54,16 @@ class MainWindow(QWidget):
     body_layout = QHBoxLayout()
     self.sidebar = SideBar()
 
-    # self.sidebar.populate({
-    #   "config1": "Home Network",
-    #   "config2": "Office Network",
-    #   "config3": "Mobile HotSpot"
-    # })
-
-    # TODO: also fix this
+    # TODO: populate saved configs on selection change
     self.sidebar.selection.connect(lambda id: print(f"Selected config: {id}"))
 
     body_layout.addWidget(self.sidebar)
     body_layout.addWidget(VerticalBar())
-    body_layout.addWidget(Main(), 1)
+
+    main_body_widget = Main()
+    main_body_widget.save.connect(self.save_handler)
+
+    body_layout.addWidget(main_body_widget, 1)
 
     self.body_widget = QWidget()
     self.body_widget.setLayout(body_layout)
@@ -74,7 +76,6 @@ class MainWindow(QWidget):
                        QSizePolicy.Policy.Preferred)
 
     self.setLayout(v)
-    # v.addLayout(body_layout, 1)
 
     self.refresh_adapter_menu()
     self.adapter_combo.currentIndexChanged.connect(self.current_adapter)
@@ -87,14 +88,9 @@ class MainWindow(QWidget):
 
     if not self.is_loading:
       self.is_loading = True
-      # self._layout.setEnabled(False)
-      # self._layout.removeWidget(self.body_widget)
-      # self.body_widget.setParent(None)
-      # self._layout.addWidget(self.loader_widget, 1)
-      # self._layout.setEnabled(True)
-
       self.loader_widget.setVisible(True)
       self.body_widget.setVisible(False)
+      self.sidebar.reset()
 
     self.network_adapter.refresh()
 
@@ -105,9 +101,8 @@ class MainWindow(QWidget):
     if not adapters:
       self.adapter_combo.addItem("No adapters found")
     else:
-      # self.adapter_combo.addItems(
-        # adapter for adapter in adapters if "ethernet" in adapter.lower())
-      self.adapter_combo.addItems(adapters)
+      self.adapter_combo.addItems(
+        adapter for adapter in adapters if "ethernet" in adapter.lower())
       self.adapter_combo.setEnabled(True)
 
   def current_adapter(self):
@@ -117,17 +112,46 @@ class MainWindow(QWidget):
     print(f"Current adapter: {self.active_adapter}")
 
     # TODO: if cur is None then show error
+    # For now, it's gonna be just stuck in loading screen if it can't find any adapters
+    if not self.active_adapter:
+      return
 
     if self.is_loading:
       self.is_loading = False
 
-      # self._layout.setEnabled(False)
-      # self._layout.removeWidget(self.loader_widget)
-      # self.loader_widget.setParent(None)
-      # self._layout.addWidget(self.body_widget, 1)
-      # self.sidebar.reset()
-      # self._layout.setEnabled(True)
-
       self.loader_widget.setVisible(False)
       self.body_widget.setVisible(True)
-      self.sidebar.reset()
+
+      self.populate_saved_configs()
+
+  def populate_saved_configs(self):
+    if not self.active_adapter:
+      print("No active adapter selected. Cannot populate saved configurations.")
+      return
+
+    self.sidebar.reset()
+
+    adapter_saved_configs = self.config.get(self.active_adapter) or {}
+    saved_config_data = {}
+
+    for key in adapter_saved_configs.keys():
+      saved_config_data[key] = key[0:15] + \
+        ("..." if len(key) > 15 else "")
+
+    if saved_config_data:
+      self.sidebar.populate(saved_config_data)
+
+  def save_handler(self, config_data: dict):
+    if not self.active_adapter:
+      print("No active adapter selected. Cannot save configuration.")
+      return
+
+    saved_data = self.config.get(self.active_adapter) or {}
+
+    data_to_save = config_data.copy()
+    data_to_save.pop("name")
+
+    saved_data[config_data["name"]] = data_to_save
+
+    self.config.set(self.active_adapter, saved_data)
+    self.populate_saved_configs()
