@@ -1,4 +1,3 @@
-import base64
 from typing import List, Optional, Tuple
 import platform
 import shutil
@@ -66,19 +65,11 @@ def apply_static_ipv4(adapter: str, ip: str, mask: str, gateway: str) -> Tuple[b
   os_name = platform.system()
   try:
     if os_name == "Windows":
-      ps = f"""
-$iface = "{adapter}"
-$pref = {prefix}
-$ip = "{ip}"
-$gw = "{gateway}"
-$existing = Get-NetIPAddress -InterfaceAlias $iface -AddressFamily IPv4 -ErrorAction SilentlyContinue | Select-Object -First 1
-if ($existing) {{
-  Set-NetIPAddress -InterfaceAlias $iface -IPAddress $ip -PrefixLength $pref -DefaultGateway $gw -ErrorAction Stop
-}} else {{
-  New-NetIPAddress -InterfaceAlias $iface -IPAddress $ip -PrefixLength $pref -DefaultGateway $gw -ErrorAction Stop
-}}
-"""
-      return run_elevated(["powershell", "-Command", ps])
+      cmd = [
+          "netsh", "interface", "ip", "set", "address",
+          f'name="{adapter}"', "static", ip, mask, gateway
+      ]
+      return run_elevated(cmd)
     elif os_name == "Darwin":
       return run_elevated(["networksetup", "-setmanual", adapter, ip, mask, gateway])
     elif os_name == "Linux":
@@ -180,19 +171,29 @@ def apply_dns(adapter: str, servers: Optional[List[str]], family="ipv4") -> Tupl
 
   try:
     if os_name == "Windows":
-      if servers:
-        server_str = ",".join(servers)
-        ps_cmd = (
-            f"Set-DnsClientServerAddress -InterfaceAlias '{adapter}' "
-            f"-AddressFamily {family.upper()} -ServerAddresses {server_str} -ErrorAction Stop"
-        )
-      else:
-        ps_cmd = (
-            f"Set-DnsClientServerAddress -InterfaceAlias '{adapter}' "
-            f"-AddressFamily {family.upper()} -ResetServerAddresses -ErrorAction Stop"
-        )
+      if family.lower() == "ipv6":
+        if servers:
+          cmd = ["netsh", "interface", "ipv6", "set", "dns", f"name={adapter}", "static", servers[0]]
+          ok, msg = run_elevated(cmd)
+          if not ok:
+            return False, msg
+          for s in servers[1:]:
+            run_elevated(["netsh", "interface", "ipv6", "add", "dns", f"name={adapter}", s, "index=2"])
+          return True, "OK"
+        else:
+          return run_elevated(["netsh", "interface", "ipv6", "set", "dns", f"name={adapter}", "dhcp"])
 
-      return run_elevated(["powershell", "-Command", ps_cmd])
+      if servers:
+        commands = []
+        commands.append(f'netsh interface ip set dns name="{adapter}" static {servers[0]}')
+
+        for i, s in enumerate(servers[1:], start=2):
+          commands.append(f'netsh interface ip add dns name="{adapter}" {s} index={i}')
+
+        full_command = " & ".join(commands)
+        return run_elevated(["cmd", "/c", full_command])
+      else:
+        return run_elevated(["netsh", "interface", "ip", "set", "dns", f'name="{adapter}"', "dhcp"])
 
     elif os_name == "Darwin":
       args = servers if servers else ["empty"]
