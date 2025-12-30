@@ -53,7 +53,7 @@ class SideBar(QWidget):
           outline: none;
         }
         QPushButton:hover {
-          background-color: #333;
+          background-color: palette(base);
         }
       """)
       button.clicked.connect(
@@ -71,7 +71,7 @@ class SideBar(QWidget):
           color: red;
         }
         QPushButton:hover {
-          background-color: #333;
+          background-color: palette(base);
         }
       """)
 

@@ -1,5 +1,6 @@
-from logging import config
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QSizePolicy
+from typing import cast
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QComboBox, QPushButton, QSizePolicy, QApplication
+from PyQt6.QtCore import QEvent
 from components.NoAdapter import NoAdapter
 from utils.config_manager import ConfigManager
 from utils.adapter import AdapterLoader

@@ -1,9 +1,8 @@
 from PyQt6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QSizePolicy, QPushButton
-from PyQt6.QtSvgWidgets import QSvgWidget
-from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import Qt
 from components.Settings import Settings
 import globals
+from utils.svg import ColorIcon, ColorSvgWidget
 from utils.ui import H2, Hr, SubText
 
 
@@ -27,8 +26,8 @@ class Header(QWidget):
     sub_text = SubText("Generate commands for Windows, MacOS, and Linux")
     header.addWidget(sub_text)
 
-    server_icon = QSvgWidget("assets/server.svg")
-    server_icon.setFixedSize(24, 24)
+    text_color = self.palette().text().color().name()
+    server_icon = ColorSvgWidget("assets/server.svg", text_color, size=24)
 
     self._h_layout.addWidget(server_icon, 0, Qt.AlignmentFlag.AlignVCenter)
     self._h_layout.addLayout(header, 1)
@@ -36,7 +35,7 @@ class Header(QWidget):
     settings_button = QPushButton()
     settings_button.setFlat(True)
 
-    settings_icon = QIcon("assets/settings.svg")
+    settings_icon = ColorIcon("assets/settings.svg", text_color)
     settings_button.setIcon(settings_icon)
 
     settings_button.setStyleSheet("padding: 6px 4px;")
@@ -48,8 +47,7 @@ class Header(QWidget):
     self._layout.addWidget(Hr())
     self.setLayout(self._layout)
 
-    self.setSizePolicy(QSizePolicy.Policy.Preferred,
-                       QSizePolicy.Policy.Fixed)
+    self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
   def settings_handler(self):
     settings_dialog = Settings()
