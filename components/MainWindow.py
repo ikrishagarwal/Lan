@@ -23,8 +23,7 @@ class MainWindow(QWidget):
     self.network_adapter = AdapterLoader()
     self.network_adapter.finished.connect(self.refresh_adapters)
 
-    # TODO: change it to use ~/.config/lan_config.json
-    self.config = ConfigManager(filename="config/settings.json")
+    self.config = ConfigManager()
 
     # we start with a loading state
     self.is_loading = True
@@ -75,8 +74,7 @@ class MainWindow(QWidget):
     v.addWidget(self.body_widget, 1)
 
     v.addStretch(0)
-    self.setSizePolicy(QSizePolicy.Policy.Preferred,
-                       QSizePolicy.Policy.Preferred)
+    self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
 
     self.setLayout(v)
 
@@ -141,8 +139,7 @@ class MainWindow(QWidget):
     saved_config_data = {}
 
     for key in adapter_saved_configs.keys():
-      saved_config_data[key] = key[0:15] + \
-        ("..." if len(key) > 15 else "")
+      saved_config_data[key] = key[0:15] + ("..." if len(key) > 15 else "")
 
     if saved_config_data:
       self.sidebar.populate(saved_config_data)
@@ -160,8 +157,7 @@ class MainWindow(QWidget):
     config_data = adapter_saved_configs.get(config_name)
 
     if not config_data:
-      print(
-        f"Configuration '{config_name}' not found for adapter '{self.active_adapter}'.")
+      print(f"Configuration '{config_name}' not found for adapter '{self.active_adapter}'.")
       return
 
     self.main_body_widget.populate(config_name, config_data)
@@ -178,8 +174,7 @@ class MainWindow(QWidget):
     adapter_saved_configs = self.config.get(self.active_adapter) or {}
 
     if config_name not in adapter_saved_configs:
-      print(
-        f"Configuration '{config_name}' not found for adapter '{self.active_adapter}'.")
+      print(f"Configuration '{config_name}' not found for adapter '{self.active_adapter}'.")
       return
 
     adapter_saved_configs.pop(config_name)

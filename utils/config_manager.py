@@ -1,12 +1,14 @@
+from PyQt6.QtCore import QSettings
 import json
 import os
 
 
 class ConfigManager:
-  def __init__(self, filename) -> None:
-    base_path = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.dirname(os.path.join(base_path, "../.."))
-    self.filepath = os.path.join(project_root, filename)
+  def __init__(self, filename=None) -> None:
+    settings = QSettings()
+
+    default_path = os.path.join(os.path.expanduser("~"), ".config", "lan_config.json")
+    self.filepath = filename if filename else settings.value("config_paths", default_path)
 
     self.config = {}
     self.load()

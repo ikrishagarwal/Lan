@@ -1,8 +1,11 @@
 from pathlib import Path
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLineEdit, QPushButton, QHBoxLayout, QFileDialog
-from PyQt6.QtCore import QSettings
+from PyQt6.QtCore import QSettings, QUrl
+from PyQt6.QtGui import QDesktopServices
 from utils.ui import H1, H4
 from os import path
+
+default_path = path.abspath(path.join(path.expanduser("~"), ".config", "lan_config.json"))
 
 
 class Settings(QDialog):
@@ -14,9 +17,6 @@ class Settings(QDialog):
     self.setModal(True)
 
     self.settings = QSettings()
-
-    default_path = path.join(path.expanduser(
-      "~"), ".config", "lan_config.json")
 
     self._layout = QVBoxLayout()
 
@@ -64,20 +64,27 @@ class Settings(QDialog):
     open_json_button.setFixedWidth(100)
     open_json_button.setStyleSheet("""
       QPushButton {
-        outline: none;
         font-size: 12px;
         font-weight: semibold;
         padding: 6px 12px;
       }
     """)
 
+    open_json_button.clicked.connect(self.open_json_handler)
+
     button_layout = QHBoxLayout()
     button_layout.addStretch()
+
     # button_layout.addWidget(save_button, 0)
     button_layout.addWidget(open_json_button, 0)
     self._layout.addLayout(button_layout)
 
     self.setLayout(self._layout)
+
+  def open_json_handler(self):
+    config_path = self.settings.value("config_path", default_path)
+    file_url = QUrl.fromLocalFile(config_path)
+    QDesktopServices.openUrl(file_url)
 
   def change_config_handler(self):
     current_path = path.dirname(self.settings.value(
