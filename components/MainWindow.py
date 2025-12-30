@@ -1,9 +1,9 @@
-from typing import cast
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QComboBox, QPushButton, QSizePolicy, QApplication
-from PyQt6.QtCore import QEvent
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QComboBox, QPushButton, QSizePolicy
+from PyQt6.QtCore import QThreadPool
 from components.NoAdapter import NoAdapter
+from scripts.networkConfig import get_current_config, get_current_dns
 from utils.config_manager import ConfigManager
-from utils.adapter import AdapterLoader
+from utils.adapter import AdapterLoader, Worker
 from utils.ui import VerticalBar
 from components.Header import Header
 from components.SavedConfigs import SideBar
@@ -25,6 +25,7 @@ class MainWindow(QWidget):
     self.network_adapter.finished.connect(self.refresh_adapters)
 
     self.config = ConfigManager()
+    self.threadpool = QThreadPool()
 
     # we start with a loading state
     self.is_loading = True
@@ -106,7 +107,7 @@ class MainWindow(QWidget):
     else:
       self.adapter_combo.addItems(
         adapter for adapter in adapters if "ethernet" in adapter.lower())
-      # self.adapter_combo.addItems(adapters)
+      self.adapter_combo.addItems(adapters)
       self.adapter_combo.setEnabled(True)
 
   def current_adapter(self):
@@ -120,13 +121,69 @@ class MainWindow(QWidget):
       self.no_adapter_widget.setVisible(True)
       return
 
-    if self.is_loading:
-      self.is_loading = False
+    if not self.is_loading:
+      self.loader_widget.setVisible(True)
+      self.body_widget.setVisible(False)
 
-      self.no_adapter_widget.setVisible(False)
-      self.loader_widget.setVisible(False)
-      self.body_widget.setVisible(True)
+      self.is_loading = True
 
+    self.no_adapter_widget.setVisible(False)
+
+    self.body_widget.setVisible(False)
+    self.loader_widget.setVisible(True)
+
+    # self.populate_saved_configs()
+
+    self.adapter_combo.setEnabled(False)
+
+    current_config_worker = Worker(
+        lambda adapter=self.active_adapter: get_current_config(adapter),
+        lambda adapter=self.active_adapter: get_current_dns(adapter)
+    )
+
+    current_config_worker.signals.finished.connect(self.on_current_config_loaded)
+
+    self.threadpool.start(current_config_worker)
+
+    # current_config = get_current_config(self.active_adapter)
+    # current_dns = get_current_dns(self.active_adapter)
+
+    # self.main_body_widget.populate("", {
+    #   "ip": current_config.get("ip", ""),
+    #   "subnet": current_config.get("mask", ""),
+    #   "gateway": current_config.get("gateway", ""),
+    #   "dns_primary": current_dns[0] if len(current_dns) > 0 else "",
+    #   "dns_secondary": current_dns[1] if len(current_dns) > 1 else "",
+    # })
+
+    # if self.is_loading:
+    #   self.is_loading = False
+
+    #   self.no_adapter_widget.setVisible(False)
+    #   self.loader_widget.setVisible(False)
+    #   self.body_widget.setVisible(True)
+
+    # self.populate_saved_configs()
+
+  def on_current_config_loaded(self, results):
+    current_config, current_dns = results
+
+    self.main_body_widget.populate("", {
+      "ip": current_config.get("ip", ""),
+      "subnet": current_config.get("mask", ""),
+      "gateway": current_config.get("gateway", ""),
+      "dns_primary": current_dns[0] if len(current_dns) > 0 else "",
+      "dns_secondary": current_dns[1] if len(current_dns) > 1 else "",
+    })
+
+    self.no_adapter_widget.setVisible(False)
+
+    self.loader_widget.setVisible(False)
+    self.body_widget.setVisible(True)
+
+    self.is_loading = False
+
+    self.adapter_combo.setEnabled(True)
     self.populate_saved_configs()
 
   def populate_saved_configs(self):

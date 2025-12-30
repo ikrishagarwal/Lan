@@ -1,5 +1,28 @@
-from PyQt6.QtCore import QObject, pyqtSignal as Signal, QThread
+from typing import Callable
+from PyQt6.QtCore import QObject, pyqtSignal as Signal, QThread, QRunnable, pyqtSlot
 from scripts.networkConfig import list_adapters
+
+
+class WorkerSignals(QObject):
+  finished = Signal(list)
+
+
+class Worker(QRunnable):
+  def __init__(self, *fns: Callable):
+    super().__init__()
+
+    self.fns = fns
+    self.signals = WorkerSignals()
+
+  @pyqtSlot()
+  def run(self):
+    results = []
+
+    # TODO: make them run in parallel?
+    for fn in self.fns:
+      results.append(fn())
+
+    self.signals.finished.emit(results)
 
 
 class AdapterWorker(QObject):
@@ -10,6 +33,7 @@ class AdapterWorker(QObject):
     self.finished.emit(adapters)
 
 
+# TODO: remove and go with the thread pool approach as well
 class AdapterLoader(QObject):
   finished = Signal(object)
 
