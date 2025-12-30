@@ -5,6 +5,7 @@ from utils.ui import H2
 
 class Main(QWidget):
   save = Signal(object)
+  apply = Signal(object)
 
   def __init__(self):
     super().__init__()
@@ -44,6 +45,7 @@ class Main(QWidget):
     apply_button = QPushButton("Apply")
 
     save_button.clicked.connect(self._save_handler)
+    apply_button.clicked.connect(self._apply_handler)
 
     button_layout.addWidget(save_button)
     button_layout.addWidget(apply_button)
@@ -74,3 +76,14 @@ class Main(QWidget):
     }
 
     self.save.emit(config_data)
+
+  def _apply_handler(self):
+    config_data = {
+      "ip": self.ip.text(),
+      "subnet": self.subnet.text(),
+      "gateway": self.gateway.text(),
+      "dns_primary": self.dns_primary.text(),
+      "dns_secondary": self.dns_secondary.text(),
+    }
+
+    self.apply.emit(config_data)

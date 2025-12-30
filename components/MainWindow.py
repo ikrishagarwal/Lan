@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QComboBox, QPushButton, QSizePolicy
 from PyQt6.QtCore import QThreadPool
 from components.NoAdapter import NoAdapter
-from scripts.networkConfig import get_current_config, get_current_dns
+from scripts.networkConfig import get_current_config, get_current_dns, apply_dns, apply_static_ipv4
 from utils.config_manager import ConfigManager
 from utils.adapter import AdapterLoader, Worker
 from utils.ui import VerticalBar
@@ -66,6 +66,7 @@ class MainWindow(QWidget):
 
     self.main_body_widget = Main()
     self.main_body_widget.save.connect(self.save_handler)
+    self.main_body_widget.apply.connect(self.apply_handler)
 
     body_layout.addWidget(self.main_body_widget, 1)
 
@@ -253,3 +254,21 @@ class MainWindow(QWidget):
 
     self.config.set(self.active_adapter, saved_data)
     self.populate_saved_configs()
+
+  def apply_handler(self, config_data: dict):
+    if not self.active_adapter:
+      print("No active adapter selected. Cannot apply configuration.")
+      return
+
+    apply_worker = Worker(
+      lambda adapter=self.active_adapter, data=config_data: apply_static_ipv4(
+        adapter, data.get("ip"), data.get("subnet"), data.get("gateway")),
+      lambda adapter=self.active_adapter, data=config_data: apply_dns(
+        adapter, list(filter(None, [data.get("dns_primary"), data.get("dns_secondary")])))
+    )
+
+    apply_worker.signals.finished.connect(self.on_apply_finished)
+    self.threadpool.start(apply_worker)
+
+  def on_apply_finished(self, results):
+    print("Apply results:", results)

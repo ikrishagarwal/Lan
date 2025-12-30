@@ -20,7 +20,10 @@ class Worker(QRunnable):
 
     # TODO: make them run in parallel?
     for fn in self.fns:
-      results.append(fn())
+      try:
+        results.append(fn())
+      except Exception as e:
+        results.append(e)
 
     self.signals.finished.emit(results)
 

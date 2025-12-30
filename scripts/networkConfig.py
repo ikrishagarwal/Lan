@@ -1,3 +1,5 @@
+import base64
+from typing import List, Optional, Tuple
 import platform
 import shutil
 from typing import List, Tuple, Optional, Dict
@@ -172,44 +174,61 @@ if ($ip) {{
 def apply_dns(adapter: str, servers: Optional[List[str]], family="ipv4") -> Tuple[bool, str]:
   family = family.lower()
   os_name = platform.system()
+
+  if servers is not None and len(servers) == 0:
+    servers = None
+
   try:
     if os_name == "Windows":
       if servers:
-        return run_elevated(["powershell", "-Command", f'Set-DnsClientServerAddress -InterfaceAlias "{adapter}" -AddressFamily {family.upper()} -ServerAddresses {",".join(servers)} -ErrorAction Stop'])
+        server_str = ",".join(servers)
+        ps_cmd = (
+            f"Set-DnsClientServerAddress -InterfaceAlias '{adapter}' "
+            f"-AddressFamily {family.upper()} -ServerAddresses {server_str} -ErrorAction Stop"
+        )
       else:
-        return run_elevated(["powershell", "-Command", f'Set-DnsClientServerAddress -InterfaceAlias "{adapter}" -AddressFamily {family.upper()} -ResetServerAddresses -ErrorAction Stop'])
+        ps_cmd = (
+            f"Set-DnsClientServerAddress -InterfaceAlias '{adapter}' "
+            f"-AddressFamily {family.upper()} -ResetServerAddresses -ErrorAction Stop"
+        )
+
+      return run_elevated(["powershell", "-Command", ps_cmd])
+
     elif os_name == "Darwin":
-      if servers and len(servers) > 0:
-        return run_elevated(["networksetup", "-setdnsservers", adapter] + servers)
-      else:
-        return run_elevated(["networksetup", "-setdnsservers", adapter, "empty"])
+      args = servers if servers else ["empty"]
+      return run_elevated(["networksetup", "-setdnsservers", adapter] + args)
+
     elif os_name == "Linux":
       if not shutil.which("nmcli"):
         return False, "nmcli not found (NetworkManager required)."
-      if family == "ipv4":
-        if servers:
-          ok, msg = run_elevated(
-            ["nmcli", "con", "mod", adapter, "ipv4.ignore-auto-dns", "yes", "ipv4.dns", " ".join(servers)])
-        else:
-          ok, msg = run_elevated(
-            ["nmcli", "con", "mod", adapter, "ipv4.ignore-auto-dns", "no", "ipv4.dns", ""])
-        if not ok:
-          return ok, msg
-        return run_elevated(["nmcli", "con", "up", adapter])
-      else:  # ipv6
-        if servers:
-          ok, msg = run_elevated(
-            ["nmcli", "con", "mod", adapter, "ipv6.ignore-auto-dns", "yes", "ipv6.dns", " ".join(servers)])
-        else:
-          ok, msg = run_elevated(
-            ["nmcli", "con", "mod", adapter, "ipv6.ignore-auto-dns", "no", "ipv6.dns", ""])
-        if not ok:
-          return ok, msg
-        return run_elevated(["nmcli", "con", "up", adapter])
+
+      ignore_auto_flag = f"{family}.ignore-auto-dns"
+      dns_flag = f"{family}.dns"
+
+      if servers:
+        cmd = [
+            "nmcli", "con", "mod", adapter,
+            ignore_auto_flag, "yes",
+            dns_flag, " ".join(servers)
+        ]
+      else:
+        cmd = [
+            "nmcli", "con", "mod", adapter,
+            ignore_auto_flag, "no",
+            dns_flag, ""
+        ]
+
+      ok, msg = run_elevated(cmd)
+      if not ok:
+        return False, f"Failed to modify connection: {msg}"
+
+      return run_elevated(["nmcli", "device", "reapply", adapter])
+
     else:
       return False, f"Unsupported OS: {os_name}"
+
   except Exception as e:
-    return False, str(e)
+    return False, f"Error applying DNS: {str(e)}"
 
 
 def get_current_dns(adapter: str, family="ipv4") -> List[str]:

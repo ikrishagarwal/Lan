@@ -11,29 +11,62 @@ def run(cmd: List[str], check=True, capture_output=True, text=True) -> subproces
 
 def run_elevated(base_cmd: List[str]) -> Tuple[bool, str]:
   os_name = platform.system()
+
   try:
     if os_name == "Windows":
-      ps_cmd = ' '.join(escape_ps_arg(a) for a in base_cmd)
+      cmd_str = " ".join(base_cmd)
+      safe_cmd = cmd_str.replace('"', '\\"')
+
       wrapper = [
-          "powershell", "-Command",
-          f"Start-Process powershell -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -Command {ps_cmd}; exit $LASTEXITCODE' -Wait"
+          "powershell",
+          "-NoProfile",
+          "-Command",
+          f"Start-Process powershell -Verb RunAs -Wait -ArgumentList '-NoExit -NoProfile -ExecutionPolicy Bypass -Command \"{safe_cmd}; exit $LASTEXITCODE\"'"
       ]
-      cp = subprocess.run(wrapper)
+
+      cp = subprocess.run(wrapper, capture_output=True, text=True)
+
       ok = (cp.returncode == 0)
       return ok, "OK" if ok else f"Command failed with code {cp.returncode}"
+
     else:
       if shutil.which("pkexec"):
         cmd = ["pkexec"] + base_cmd
-        cp = subprocess.run(cmd)
-        ok = (cp.returncode == 0)
-        return ok, "OK" if ok else f"Command failed with code {cp.returncode}"
       else:
         cmd = ["sudo"] + base_cmd
-        cp = subprocess.run(cmd)
-        ok = (cp.returncode == 0)
-        return ok, "OK" if ok else f"Command failed with code {cp.returncode}"
+
+      cp = subprocess.run(cmd, capture_output=True, text=True)
+      ok = (cp.returncode == 0)
+
+      err_msg = cp.stderr.strip() if cp.stderr else f"Code {cp.returncode}"
+      return ok, "OK" if ok else f"Command failed: {err_msg}"
+
   except Exception as e:
     return False, str(e)
+
+# def run_elevated(base_cmd: List[str]) -> Tuple[bool, str]:
+#   os_name = platform.system()
+#   try:
+#     if os_name == "Windows":
+#       ps_cmd = ' '.join(escape_ps_arg(a) for a in base_cmd)
+#       wrapper = [
+#           "powershell", "-Command",
+#           f"Start-Process powershell -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -Command {ps_cmd}; exit $LASTEXITCODE' -Wait"
+#       ]
+#       cp = subprocess.run(wrapper)
+#       ok = (cp.returncode == 0)
+#       return ok, "OK" if ok else f"Command failed with code {cp.returncode}"
+#     else:
+#       if shutil.which("pkexec"):
+#         cmd = ["pkexec"] + base_cmd
+#         cp = subprocess.run(cmd)
+#         ok = (cp.returncode == 0)
+#         return ok, "OK" if ok else f"Command failed with code {cp.returncode}"
+#       else:
+#         cmd = ["sudo"] + base_cmd
+#         cp = subprocess.run(cmd)
+#         ok = (cp.returncode == 0)
+#         return ok, "OK" if ok else f"Command failed with code {cp.returncode}"
 
 
 def escape_ps_arg(s: str) -> str:
