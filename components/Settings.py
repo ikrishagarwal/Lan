@@ -1,9 +1,11 @@
-from pathlib import Path
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLineEdit, QPushButton, QHBoxLayout, QFileDialog
 from PyQt6.QtCore import QSettings, QUrl
-from PyQt6.QtGui import QDesktopServices
+from PyQt6.QtGui import QDesktopServices, QPalette
+from pyqttoast import Toast, ToastPosition
+from utils.config_manager import ConfigManager
 from utils.ui import H1, H4
 from os import path
+from pathlib import Path
 
 default_path = path.abspath(path.join(path.expanduser("~"), ".config", "lan_config.json"))
 
@@ -15,6 +17,10 @@ class Settings(QDialog):
     self.setWindowTitle("Settings")
     self.setMinimumSize(400, 400)
     self.setModal(True)
+
+    Toast.setPositionRelativeToWidget(self)
+    Toast.setPosition(ToastPosition.BOTTOM_MIDDLE)
+    Toast.setOffsetY(20)
 
     self.settings = QSettings()
 
@@ -47,17 +53,19 @@ class Settings(QDialog):
 
     self._layout.addStretch()
 
-    # save_button = QPushButton("Save")
-    # save_button.setFlat(True)
-    # save_button.setFixedWidth(100)
-    # save_button.setStyleSheet("""
-    #   QPushButton {
-    #     outline: none;
-    #     font-size: 12px;
-    #     font-weight: semibold;
-    #     padding: 6px 12px;
-    #   }
-    # """)
+    save_button = QPushButton("Save")
+    save_button.setFlat(True)
+    save_button.setFixedWidth(100)
+    save_button.setStyleSheet("""
+      QPushButton {
+        outline: none;
+        font-size: 12px;
+        font-weight: semibold;
+        padding: 6px 12px;
+      }
+    """)
+
+    save_button.clicked.connect(self.save_handler)
 
     open_json_button = QPushButton("Open Config")
     open_json_button.setFlat(True)
@@ -75,7 +83,7 @@ class Settings(QDialog):
     button_layout = QHBoxLayout()
     button_layout.addStretch()
 
-    # button_layout.addWidget(save_button, 0)
+    button_layout.addWidget(save_button, 0)
     button_layout.addWidget(open_json_button, 0)
     self._layout.addLayout(button_layout)
 
@@ -86,6 +94,25 @@ class Settings(QDialog):
     file_url = QUrl.fromLocalFile(config_path)
     QDesktopServices.openUrl(file_url)
 
+  def save_handler(self):
+    config_path = self.config_link_input.text()
+    current_config_path = self.settings.value(
+      "config_path", default_path)
+
+    if Path(config_path) != Path(current_config_path):
+      self.settings.setValue("config_path", config_path)
+
+      old_config = ConfigManager(current_config_path)
+      new_config = ConfigManager(config_path)
+      new_config.load_data(old_config.as_dict())
+
+      del old_config
+      del new_config
+
+      self.create_toast("Settings Saved", "Configuration path updated successfully.")
+    else:
+      self.create_toast("No Changes", "Configuration path is unchanged.")
+
   def change_config_handler(self):
     current_path = path.dirname(self.settings.value(
       "config_path", path.expanduser("~")))
@@ -94,5 +121,15 @@ class Settings(QDialog):
       self, "Select Config Folder", current_path)
     if folder_name:
       new_config_path = path.join(Path(folder_name), "lan_config.json")
-      self.settings.setValue("config_path", new_config_path)
+      # self.settings.setValue("config_path", new_config_path)
       self.config_link_input.setText(new_config_path)
+
+  def create_toast(self, title: str, text: str):
+    toast = Toast(self)
+    toast.setTitle(title)
+    toast.setText(text)
+    toast.setBackgroundColor(QPalette().base().color())
+    toast.setTitleColor(QPalette().windowText().color())
+    toast.setTextColor(QPalette().placeholderText().color())
+    toast.setCloseButtonIconColor(QPalette().placeholderText().color())
+    toast.show()

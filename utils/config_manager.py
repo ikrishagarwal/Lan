@@ -39,3 +39,7 @@ class ConfigManager:
 
   def as_dict(self) -> dict:
     return self.config
+
+  def load_data(self, data: dict) -> None:
+    self.config = data
+    self.save()

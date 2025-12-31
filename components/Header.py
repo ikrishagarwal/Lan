@@ -10,6 +10,8 @@ class Header(QWidget):
   def __init__(self):
     super().__init__()
 
+    self.settings_dialog = None
+
     self._h_layout = QHBoxLayout()
     self._layout = QVBoxLayout()
 
@@ -50,5 +52,7 @@ class Header(QWidget):
     self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
   def settings_handler(self):
-    settings_dialog = Settings()
-    settings_dialog.exec()
+    if self.settings_dialog is None:
+      self.settings_dialog = Settings()
+
+    self.settings_dialog.exec()
