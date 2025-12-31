@@ -1,5 +1,7 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QComboBox, QPushButton, QSizePolicy
 from PyQt6.QtCore import QThreadPool
+from PyQt6.QtGui import QColor, QPalette
+from pyqttoast import Toast, ToastPosition
 from components.NoAdapter import NoAdapter
 from scripts.networkConfig import get_current_config, get_current_dns, apply_dns, apply_static_ipv4
 from utils.config_manager import ConfigManager
@@ -26,6 +28,10 @@ class MainWindow(QWidget):
 
     self.config = ConfigManager()
     self.threadpool = QThreadPool()
+
+    Toast.setPositionRelativeToWidget(self)
+    Toast.setPosition(ToastPosition.BOTTOM_MIDDLE)
+    Toast.setOffsetY(20)
 
     # we start with a loading state
     self.is_loading = True
@@ -108,7 +114,7 @@ class MainWindow(QWidget):
     else:
       self.adapter_combo.addItems(
         adapter for adapter in adapters if "ethernet" in adapter.lower())
-      self.adapter_combo.addItems(adapters)
+      # self.adapter_combo.addItems(adapters)
       self.adapter_combo.setEnabled(True)
 
   def current_adapter(self):
@@ -133,8 +139,6 @@ class MainWindow(QWidget):
     self.body_widget.setVisible(False)
     self.loader_widget.setVisible(True)
 
-    # self.populate_saved_configs()
-
     self.adapter_combo.setEnabled(False)
 
     current_config_worker = Worker(
@@ -145,26 +149,6 @@ class MainWindow(QWidget):
     current_config_worker.signals.finished.connect(self.on_current_config_loaded)
 
     self.threadpool.start(current_config_worker)
-
-    # current_config = get_current_config(self.active_adapter)
-    # current_dns = get_current_dns(self.active_adapter)
-
-    # self.main_body_widget.populate("", {
-    #   "ip": current_config.get("ip", ""),
-    #   "subnet": current_config.get("mask", ""),
-    #   "gateway": current_config.get("gateway", ""),
-    #   "dns_primary": current_dns[0] if len(current_dns) > 0 else "",
-    #   "dns_secondary": current_dns[1] if len(current_dns) > 1 else "",
-    # })
-
-    # if self.is_loading:
-    #   self.is_loading = False
-
-    #   self.no_adapter_widget.setVisible(False)
-    #   self.loader_widget.setVisible(False)
-    #   self.body_widget.setVisible(True)
-
-    # self.populate_saved_configs()
 
   def on_current_config_loaded(self, results):
     current_config, current_dns = results
@@ -270,5 +254,21 @@ class MainWindow(QWidget):
     apply_worker.signals.finished.connect(self.on_apply_finished)
     self.threadpool.start(apply_worker)
 
+    self.create_toast("Applying Configurations",
+                      "Your network settings are being applied in the background please wait.")
+
   def on_apply_finished(self, results):
     print("Apply results:", results)
+    body = f'IPv4: {"Success" if results[0][0] else "Failed"} | DNS: {"Success" if results[1][0] else "Failed"}'
+
+    self.create_toast("Configuration Applied", body)
+
+  def create_toast(self, title: str, text: str):
+    toast = Toast(self)
+    toast.setTitle(title)
+    toast.setText(text)
+    toast.setBackgroundColor(QPalette().base().color())
+    toast.setTitleColor(QPalette().windowText().color())
+    toast.setTextColor(QPalette().placeholderText().color())
+    toast.setCloseButtonIconColor(QPalette().placeholderText().color())
+    toast.show()
