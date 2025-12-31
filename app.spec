@@ -82,9 +82,10 @@ exe = EXE(
 
 # Optional: Bundle for macOS
 if sys.platform == 'darwin':
+    icns_path = os.path.join('assets', 'lan.icns')
     app = BUNDLE(
         exe,
         name='LanConfig.app',
-        icon=icon_path, # PyInstaller might want .icns here, but .ico is sometimes accepted or ignored
+        icon=icns_path,
         bundle_identifier='dev.ikrish.lanapp'
     )

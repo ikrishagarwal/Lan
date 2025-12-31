@@ -7,7 +7,7 @@ from globals import resource_path
 
 if platform.system() == "Windows":
   import ctypes
-  app_id = 'ikrish.lanconfig.app.v1'
+  app_id = 'dev.ikrish.lanconfig.v1'
   ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
 
 app = QApplication([])
