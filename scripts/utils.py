@@ -7,7 +7,10 @@ from typing import List, Tuple
 
 
 def run(cmd: List[str], check=True, capture_output=True, text=True) -> subprocess.CompletedProcess:
-  return subprocess.run(cmd, check=check, capture_output=capture_output, text=text)
+  kwargs = {}
+  if platform.system() == "Windows":
+    kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
+  return subprocess.run(cmd, check=check, capture_output=capture_output, text=text, **kwargs)
 
 
 def run_elevated(base_cmd: List[str]) -> Tuple[bool, str]:
@@ -35,7 +38,7 @@ def run_elevated(base_cmd: List[str]) -> Tuple[bool, str]:
           ps_wrapper
       ]
 
-      cp = subprocess.run(wrapper, capture_output=True, text=True)
+      cp = subprocess.run(wrapper, capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
 
       ok = (cp.returncode == 0)
 
