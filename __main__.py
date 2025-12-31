@@ -11,7 +11,7 @@ if platform.system() == "Windows":
   ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
 
 app = QApplication([])
-app.setWindowIcon(QIcon(resource_path("assets/lan.ico")))
+app.setWindowIcon(QIcon(resource_path("assets/icon.png")))
 
 QCoreApplication.setOrganizationName("LanConfig")
 QCoreApplication.setApplicationName("Lan Config")

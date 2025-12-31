@@ -49,7 +49,7 @@ a = Analysis(
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe_name = 'LanConfig'
-icon_path = os.path.join('assets', 'lan.ico')
+icon_path = os.path.join('assets', 'icon.png')
 
 # Platform specific adjustments
 if sys.platform == 'win32':
@@ -82,10 +82,9 @@ exe = EXE(
 
 # Optional: Bundle for macOS
 if sys.platform == 'darwin':
-    icns_path = os.path.join('assets', 'lan.icns')
     app = BUNDLE(
         exe,
         name='LanConfig.app',
-        icon=icns_path,
+        icon=icon_path,
         bundle_identifier='dev.ikrish.lanapp'
     )
