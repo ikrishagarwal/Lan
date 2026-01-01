@@ -6,45 +6,45 @@ from PyQt6.QtCore import Qt
 class H1(QLabel):
   def __init__(self, text):
     super().__init__(text)
-    font_style = QFont(
-      'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"', 18)
-    self.setFont(font_style)
+    font = self.font()
+    font.setPointSize(18)
+    self.setFont(font)
     self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
 
 class H2(QLabel):
   def __init__(self, text):
     super().__init__(text)
-    font_style = QFont(
-      'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"', 14)
-    self.setFont(font_style)
+    font = self.font()
+    font.setPointSize(14)
+    self.setFont(font)
     self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
 
 class H3(QLabel):
   def __init__(self, text):
     super().__init__(text)
-    font_style = QFont(
-      'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"', 12)
-    self.setFont(font_style)
+    font = self.font()
+    font.setPointSize(12)
+    self.setFont(font)
     self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
 
 class H4(QLabel):
   def __init__(self, text):
     super().__init__(text)
-    font_style = QFont(
-      'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"', 10)
-    self.setFont(font_style)
+    font = self.font()
+    font.setPointSize(11)
+    self.setFont(font)
     self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
 
 class SubText(QLabel):
   def __init__(self, text):
     super().__init__(text)
-    font_style = QFont(
-      'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"', 10)
-    self.setFont(font_style)
+    font = self.font()
+    font.setPointSize(10)
+    self.setFont(font)
 
     palette = self.palette()
     palette.setColor(QPalette.ColorRole.WindowText,

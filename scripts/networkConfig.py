@@ -9,31 +9,76 @@ import re
 def list_adapters() -> List[str]:
   os_name = platform.system()
   if os_name == "Windows":
-    cmd = ["powershell", "-Command",
+    cmd = ["powershell", "-Command", "-NoProfile",
            "Get-NetAdapter | Where-Object {$_.Status -ne 'Disabled'} | Select-Object -ExpandProperty Name"]
     try:
       cp = run(cmd)
-      names = [line.strip() for line in cp.stdout.splitlines() if line.strip()]
+      candidates = [line.strip() for line in cp.stdout.splitlines() if line.strip()]
+
+      allowed_keywords = ["ethernet", "wi-fi", "wifi", "wireless", "local area connection"]
+
+      names = []
+      for name in candidates:
+        lower_name = name.lower()
+        if any(k in lower_name for k in allowed_keywords):
+          if "v-ethernet" not in lower_name and "virtual" not in lower_name:
+            names.append(name)
+
       return names or []
+      # names = [line.strip() for line in cp.stdout.splitlines() if line.strip()]
+      # names = list(filter(lambda x: "ethernet" in x.lower() or "wi-fi" in x.lower(), names))
+      # return names or []
     except Exception:
       try:
         cp = run(["netsh", "interface", "show", "interface"])
         lines = cp.stdout.splitlines()
         names = []
         for line in lines:
-          if line and not line.startswith("---") and not line.lower().startswith("admin"):
-            parts = line.split()
-            if len(parts) >= 4:
-              names.append(" ".join(parts[3:]))
+          if not line.strip() or line.startswith("---") or "Interface Name" in line:
+            continue
+
+          parts = line.split()
+          if len(parts) >= 4:
+            adapter_name = " ".join(parts[3:])
+            lower_name = adapter_name.lower()
+
+            if "ethernet" in lower_name or "wi-fi" in lower_name or "wireless" in lower_name:
+              names.append(adapter_name)
+
         return names
+        # for line in lines:
+        #   if line and not line.startswith("---") and not line.lower().startswith("admin"):
+        #     parts = line.split()
+        #     if len(parts) >= 4:
+        #       names.append(" ".join(parts[3:]))
+        # names = list(filter(lambda x: "ethernet" in x.lower(), names))
+        # return names  # type: ignore
       except Exception:
         return []
   elif os_name == "Darwin":
     try:
       cp = run(["networksetup", "-listallnetworkservices"])
-      names = [ln.strip() for ln in cp.stdout.splitlines()
-               if ln.strip() and not ln.startswith("An asterisk")]
-      return names
+
+      allowed_keywords = [
+          "ethernet", "lan", "thunderbolt", "usb", "bridge", "dock",
+          "wi-fi", "airport"
+      ]
+
+      adapters = []
+      for ln in cp.stdout.splitlines():
+        clean_name = ln.strip()
+        lower_name = clean_name.lower()
+
+        if not clean_name or clean_name.startswith("*") or "bluetooth" in lower_name:
+          continue
+
+        if any(k in lower_name for k in allowed_keywords):
+          adapters.append(clean_name)
+
+      return adapters
+      # names = [ln.strip() for ln in cp.stdout.splitlines()
+      #          if ln.strip() and not ln.startswith("An asterisk")]
+      # return names
     except Exception:
       return []
   elif os_name == "Linux":
@@ -44,10 +89,27 @@ def list_adapters() -> List[str]:
         for line in cp.stdout.splitlines():
           if not line.strip():
             continue
-          name, ctype = (line.split(":", 1) + [""])[:2]
-          if ctype in ("ethernet", "wifi"):
-            names.append(name)
-        return names
+
+          name_part, sep, type_part = line.rpartition(":")
+
+          if not sep:
+            continue
+
+          # Clean up escaping if necessary (nmcli escapes : as \:)
+          real_name = name_part.replace("\\:", ":")
+
+          if "ethernet" in type_part.lower() or "wifi" in type_part.lower() or "wireless" in type_part.lower():
+            names.append(real_name)
+
+        # return names
+        # names = []
+        # for line in cp.stdout.splitlines():
+        #   if not line.strip():
+        #     continue
+        #   name, ctype = (line.split(":", 1) + [""])[:2]
+        #   if "ethernet" in ctype.lower() or "wifi" in ctype.lower():
+        #     names.append(name)
+        # return names
       except Exception:
         return []
     return []

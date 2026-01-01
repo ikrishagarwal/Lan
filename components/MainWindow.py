@@ -112,9 +112,7 @@ class MainWindow(QWidget):
     if not adapters:
       self.adapter_combo.addItem("No adapters found")
     else:
-      self.adapter_combo.addItems(
-        adapter for adapter in adapters if "ethernet" in adapter.lower())
-      # self.adapter_combo.addItems(adapters)
+      self.adapter_combo.addItems(adapters)
       self.adapter_combo.setEnabled(True)
 
   def current_adapter(self):
